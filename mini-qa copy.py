@@ -1,20 +1,24 @@
-ASTRA_DB_SECURE_BUNDLE_PATH="/Users/Bilal/personal_proj/ai_assistant/secure-connect-vector-db.zip"
-ASTRA_DB_APPLICATION_TOKEN="AstraCS:kzpbZKaNnTCoJWwBXvaTezHK:ca4b83b9f3f00ef79dd42fc46dc63ee0c07d642a1d65aea50b8840d86d9ed779"
-ASTRA_DB_CLIENT_ID="kzpbZKaNnTCoJWwBXvaTezHK"
-ASTRA_DB_CLIENT_SECRET ="+X6IS1b2iNMLq.8l9YEUcpy2wJ,+JgK4FsqZlT8RN0e9whm58_P-BsQ_4nvJZWEHvRJMrcXSo5NM5,,ZHf02O.BpMEYFJbkEcY0BoN,76TPlcT6Rv2MdP+j57y6dKo62"
+
+# Update these with your own api keys and paths
+ASTRA_DB_SECURE_BUNDLE_PATH="your secure bundle path here"
+ASTRA_DB_APPLICATION_TOKEN="Your token here"
+ASTRA_DB_CLIENT_ID="Your client id here"
+ASTRA_DB_CLIENT_SECRET ="Your client secret here"
 ASTRA_DB_KEYSPACE="search"
-OPENAI_API_KEY="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"
+OPENAI_API_KEY="Your openai api key here"
 
-from langchain.vectorstores.cassandra import Cassandra
-from langchain.indexes.vectorstore import VectorStoreIndexWrapper
-from langchain.llms import OpenAI
-from langchain.embeddings import OpenAIEmbeddings
+# import the necessary packages
+from langchain.vectorstores.cassandra import Cassandra # Cassandra is a vector store
+from langchain.indexes.vectorstore import VectorStoreIndexWrapper # VectorStoreIndexWrapper is a vector index
+from langchain.llms import OpenAI # OpenAI is a language model
+from langchain.embeddings import OpenAIEmbeddings # OpenAIEmbeddings is an embedding model
 
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
+from cassandra.cluster import Cluster # Cluster is a cassandra client
+from cassandra.auth import PlainTextAuthProvider # PlainTextAuthProvider is a cassandra client
 
-from datasets import load_dataset
+from datasets import load_dataset # load_dataset is a huggingface function
 
+#   Connect to AstraDB
 cloud_config= {
         'secure_connect_bundle': ASTRA_DB_SECURE_BUNDLE_PATH
 }
@@ -22,9 +26,11 @@ auth_provider = PlainTextAuthProvider(ASTRA_DB_CLIENT_ID, ASTRA_DB_CLIENT_SECRET
 cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
 astraSession = cluster.connect()
 
+#   Connect to OpenAI
 llm = OpenAI(openai_api_key=OPENAI_API_KEY)
 myEmbedding = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
+#   Connect to AstraDB Vector Store
 myCassandraVStore = Cassandra(
     embedding=myEmbedding,
     session=astraSession,
@@ -32,20 +38,26 @@ myCassandraVStore = Cassandra(
     table_name="qa_mini_demo",
 )
 
+# Load data from huggingface and store in AstraDB
+# Default is just 50 headlines for demo purposes
 print("Loading data from huggingface")
 dataset = load_dataset("Biddls/Onion_News", split="train")
 headlines = dataset["text"][:50]
 
+#  Generate embedding and store in AstraDB
 print("\nGenerating embedding and storing in AstraDB")
 myCassandraVStore.add_texts(headlines)
 
 print("Inserted %i headlines.\n" % len(headlines))
 
+#   Query AstraDB for similar headlines
 vectorIdx = VectorStoreIndexWrapper(vectorstore=myCassandraVStore)
 
+#  Ask for a headline and return the most similar headlines
 first_question = True
 while True:
     if first_question:
+    
         query_text = input("Ask me a question: (or type 'quit to exit): ")
         first_question = False
     else:
@@ -53,11 +65,15 @@ while True:
 
     if query_text == "quit":
         break
-
+    
+    # display the question
     print("QUESTION: \%s\"" % query_text)
+
+    # get the answer from the index
     answer = vectorIdx.query(query_text, llm=llm).strip()
     print("ANSWER: \"%s\"\n" % answer)
 
+    # get the most similar headlines
     print("DOCUMENTS BY RELEVANCE:")
     for doc, score in myCassandraVStore.similarity_search_with_score(query_text, k=4):
         print("  %0.4f \"%s...\"" % (score, doc.page_content[:60]))

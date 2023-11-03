@@ -1,9 +1,13 @@
-ASTRA_DB_SECURE_BUNDLE_PATH="/Users/Bilal/personal_proj/ai_assistant/secure-connect-vector-db.zip"
-ASTRA_DB_APPLICATION_TOKEN="AstraCS:kzpbZKaNnTCoJWwBXvaTezHK:ca4b83b9f3f00ef79dd42fc46dc63ee0c07d642a1d65aea50b8840d86d9ed779"
-ASTRA_DB_CLIENT_ID="kzpbZKaNnTCoJWwBXvaTezHK"
-ASTRA_DB_CLIENT_SECRET ="+X6IS1b2iNMLq.8l9YEUcpy2wJ,+JgK4FsqZlT8RN0e9whm58_P-BsQ_4nvJZWEHvRJMrcXSo5NM5,,ZHf02O.BpMEYFJbkEcY0BoN,76TPlcT6Rv2MdP+j57y6dKo62"
+# This version simply uses a recipe dataset from hugging face
+
+# Update these with your own api keys and paths
+
+ASTRA_DB_SECURE_BUNDLE_PATH="your secure bundle path here"
+ASTRA_DB_APPLICATION_TOKEN="Your token here"
+ASTRA_DB_CLIENT_ID="Your client id here"
+ASTRA_DB_CLIENT_SECRET ="Your client secret here"
 ASTRA_DB_KEYSPACE="search"
-OPENAI_API_KEY="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"
+OPENAI_API_KEY="Your openai api key here"
 
 from langchain.vectorstores.cassandra import Cassandra
 from langchain.indexes.vectorstore import VectorStoreIndexWrapper
@@ -29,7 +33,7 @@ myCassandraVStore = Cassandra(
     embedding=myEmbedding,
     session=astraSession,
     keyspace=ASTRA_DB_KEYSPACE,
-    table_name="qa_mini_demo",
+    table_name="recipe_db_demo",
 )
 
 print("Loading data from huggingface")
